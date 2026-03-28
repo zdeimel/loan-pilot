@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.625rem;
+
+    /* Safe area for iOS notch / home bar */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  * {
+    @apply border-border;
+    /* Faster touch response on all elements */
+    touch-action: manipulation;
+  }
+
+  html {
+    /* Prevent font boosting on mobile */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+
+  /* Minimum tap target size on mobile */
+  @media (max-width: 1023px) {
+    button, a, [role="radio"], [role="checkbox"], label {
+      min-height: 44px;
+    }
+    input, select, textarea {
+      /* Prevent iOS zoom on focus */
+      font-size: 16px !important;
+    }
+  }
+}
+
+@layer components {
+  .container-app {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-16 lg:py-24;
+  }
+
+  .card-base {
+    @apply bg-white rounded-2xl border border-border shadow-card;
+  }
+
+  .step-card {
+    @apply bg-white rounded-2xl border border-border p-6 sm:p-8 shadow-card animate-slide-up;
+  }
+
+  .label-base {
+    @apply text-sm font-medium text-slate-700;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-3 rounded-xl border border-border bg-white text-slate-900 text-sm
+           placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pilot-600/20 focus:border-pilot-600
+           transition-all duration-150;
+  }
+
+  .btn-primary {
+    @apply bg-pilot-600 hover:bg-pilot-700 text-white font-medium px-5 py-2.5 rounded-xl
+           transition-all duration-150 active:scale-[0.98] shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-slate-50 text-slate-700 font-medium px-5 py-2.5 rounded-xl
+           border border-border transition-all duration-150 active:scale-[0.98];
+  }
+
+  .help-text {
+    @apply text-xs text-slate-500 mt-1;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Mobile-specific: card options with large tap targets */
+  .mobile-option-card {
+    @apply w-full text-left p-4 rounded-2xl border-2 border-border bg-white
+           active:bg-pilot-50 active:border-pilot-300
+           transition-all duration-100 min-h-[64px] flex items-center gap-4;
+  }
+
+  .mobile-option-card[data-selected="true"] {
+    @apply border-pilot-600 bg-pilot-50;
+  }
+
+  /* iOS safe area helpers */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .pb-safe-nav {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-200%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Custom scrollbar — desktop only */
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+}
+
+/* Remove outline on mobile tap */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+
+/* Prevent pull-to-refresh on application flow pages */
+.application-flow {
+  overscroll-behavior-y: none;
+}
