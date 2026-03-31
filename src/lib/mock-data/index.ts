@@ -299,7 +299,7 @@ export const mockApplications: LoanApplication[] = [
     ],
     previousEmployment: [],
     otherIncome: [
-      { id: 'oi-004', type: 'bah', description: 'Basic Allowance for Housing', monthlyAmount: 1820 },
+      { id: 'oi-004', type: 'military', description: 'Basic Allowance for Housing', monthlyAmount: 1820 },
     ],
 
     assets: [
@@ -968,7 +968,7 @@ export const mockApplications: LoanApplication[] = [
     ],
     previousEmployment: [],
     otherIncome: [
-      { id: 'oi-011', type: 'bah', description: 'BAH - Fayetteville, NC', monthlyAmount: 1512 },
+      { id: 'oi-011', type: 'military', description: 'BAH - Fayetteville, NC', monthlyAmount: 1512 },
     ],
 
     assets: [
