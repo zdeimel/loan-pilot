@@ -15,6 +15,7 @@ const propertyTypes: { value: PropertyType; label: string; emoji: string }[] = [
   { value: 'townhouse', label: 'Townhouse', emoji: '🏘️' },
   { value: 'multi-unit', label: '2-4 Unit', emoji: '🏗️' },
   { value: 'manufactured', label: 'Manufactured', emoji: '🏡' },
+  { value: 'co-op', label: 'Co-op', emoji: '🏬' },
 ]
 
 const propertyUses: { value: PropertyUse; label: string; description: string }[] = [
@@ -38,10 +39,13 @@ export function PropertyStep() {
   const [propertyType, setPropertyType] = useState<PropertyType | undefined>(sp.propertyType)
   const [propertyUse, setPropertyUse] = useState<PropertyUse | undefined>(sp.propertyUse)
   const [purchasePrice, setPurchasePrice] = useState<string>(sp.purchasePrice?.toString() ?? '')
+  const [estimatedValue, setEstimatedValue] = useState<string>(sp.estimatedValue?.toString() ?? '')
   const [yearBuilt, setYearBuilt] = useState<string>(sp.yearBuilt?.toString() ?? '')
+  const [numberOfUnits, setNumberOfUnits] = useState<string>(sp.numberOfUnits?.toString() ?? '')
 
   const loanPurpose = currentApplication.loanDetails?.purpose
   const isPurchase = loanPurpose === 'purchase'
+  const isRefi = loanPurpose === 'refinance' || loanPurpose === 'cash-out'
 
   const handleNext = () => {
     updateApplication({
@@ -51,7 +55,9 @@ export function PropertyStep() {
         propertyType,
         propertyUse,
         purchasePrice: purchasePrice ? Number(purchasePrice) : undefined,
+        estimatedValue: estimatedValue ? Number(estimatedValue) : undefined,
         yearBuilt: yearBuilt ? Number(yearBuilt) : undefined,
+        numberOfUnits: numberOfUnits ? Number(numberOfUnits) : undefined,
       },
       loanDetails: {
         ...currentApplication.loanDetails,
@@ -162,6 +168,35 @@ export function PropertyStep() {
               </p>
             </div>
           )}
+          {propertyType === 'co-op' && (
+            <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-2">
+              <HelpCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700">
+                Co-ops are not eligible for FHA or VA financing. You&apos;ll need board approval and the proprietary lease. Down payment requirements are typically 10–20%.
+              </p>
+            </div>
+          )}
+          {propertyType === 'multi-unit' && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Number of units</label>
+              <div className="flex gap-2">
+                {[2, 3, 4].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setNumberOfUnits(String(n))}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all',
+                      numberOfUnits === String(n) ? 'border-pilot-600 bg-pilot-50 text-pilot-700' : 'border-border text-slate-500 hover:border-slate-300'
+                    )}
+                  >
+                    {n} units
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">Multi-unit properties may allow rental income from non-owner units to count toward qualification.</p>
+            </div>
+          )}
         </div>
 
         {/* Property Use */}
@@ -195,6 +230,36 @@ export function PropertyStep() {
             </div>
           )}
         </div>
+
+        {/* Estimated value for refi */}
+        {isRefi && (
+          <div className="bg-white rounded-2xl border border-border shadow-card p-6">
+            <h3 className="font-semibold text-slate-900 mb-4">Estimated property value</h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Current estimated value</label>
+                <Input
+                  type="number"
+                  value={estimatedValue}
+                  onChange={(e) => setEstimatedValue(e.target.value)}
+                  placeholder="550,000"
+                  prefix="$"
+                />
+                <p className="text-xs text-slate-400 mt-1">An appraisal will confirm the official value during underwriting.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Year built <span className="text-slate-400 font-normal">(optional)</span></label>
+                <Input
+                  type="number"
+                  value={yearBuilt}
+                  onChange={(e) => setYearBuilt(e.target.value)}
+                  placeholder="2010"
+                  maxLength={4}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Price + Loan Calc */}
         {isPurchase && (

@@ -7,7 +7,15 @@ export type EmploymentType = 'employed' | 'self-employed' | 'retired' | 'unemplo
 export type MaritalStatus = 'married' | 'separated' | 'unmarried'
 export type ApplicationStatus = 'started' | 'in-progress' | 'submitted' | 'processing' | 'approved' | 'conditional' | 'denied' | 'closed'
 export type DocumentStatus = 'pending' | 'uploaded' | 'processing' | 'verified' | 'rejected'
-export type LoanProduct = 'conventional' | 'fha' | 'va' | 'usda' | 'jumbo'
+export type LoanProduct = 'conventional' | 'fha' | 'va' | 'usda' | 'jumbo' | 'non-qm'
+export type NonQMProgram = 'bank-statement' | 'dscr' | 'asset-depletion' | 'foreign-national'
+
+// ─── Prior Address ────────────────────────────────────────────────────────────
+export interface PriorAddress {
+  address: Address
+  fromDate: string
+  toDate: string
+}
 
 // ─── Borrower Personal Info ───────────────────────────────────────────────────
 export interface BorrowerPersonalInfo {
@@ -15,13 +23,16 @@ export interface BorrowerPersonalInfo {
   middleName?: string
   lastName: string
   suffix?: string
+  alternateName?: string
+  languagePreference?: string
   email: string
   phone: string
-  ssn?: string // masked
+  ssn?: string // masked XXX-XX-XXXX
   dob?: string
   maritalStatus?: MaritalStatus
   dependents?: number
   address: Address
+  priorAddresses?: PriorAddress[]
   mailingAddressSame?: boolean
   mailingAddress?: Address
   citizenshipStatus?: 'us-citizen' | 'permanent-resident' | 'non-permanent-resident'
@@ -33,6 +44,7 @@ export interface Address {
   city: string
   state: string
   zip: string
+  county?: string
   country?: string
   yearsAtAddress?: number
   monthsAtAddress?: number
@@ -44,8 +56,9 @@ export interface Address {
 export interface Employment {
   id: string
   employerName: string
-  employerAddress?: Address
+  employerEIN?: string
   employerPhone?: string
+  employerAddress?: Address
   position: string
   startDate: string
   endDate?: string
@@ -54,7 +67,7 @@ export interface Employment {
   monthlyIncome: number
   annualIncome: number
   selfEmployedYears?: number
-  businessType?: string
+  businessType?: 'sole-proprietor' | 'llc' | 's-corp' | 'c-corp' | 'partnership'
   ownershipShare?: number
 }
 
@@ -120,7 +133,12 @@ export interface LoanDetails {
   loanAmount?: number
   downPaymentAmount?: number
   downPaymentPercent?: number
+  downPaymentSource?: 'own-funds' | 'gift' | 'borrowed' | 'sale-of-asset' | 'mixed'
+  giftAmount?: number
+  earnestMoneyDeposit?: number
+  sellerConcessions?: number
   loanProduct?: LoanProduct
+  nonQMProgram?: NonQMProgram
   interestRateType?: 'fixed' | 'arm'
   loanTerm?: 30 | 20 | 15 | 10
   estimatedClosingDate?: string
@@ -139,15 +157,18 @@ export interface Declarations {
   isUSCitizen?: boolean
   isPrimaryResidence?: boolean
   hasOwnershipInterest?: boolean
-  ownershipType?: string
+  ownershipType?: 'primary-residence' | 'second-home' | 'investment-property'
   titledHow?: string
 }
 
 // ─── Demographics (HMDA) ─────────────────────────────────────────────────────
 export interface Demographics {
   ethnicity?: string[]
+  ethnicitySubcategories?: string[]
   race?: string[]
+  raceSubcategories?: string[]
   sex?: string
+  collectionMethod?: 'face-to-face' | 'telephone' | 'mail' | 'internet'
   ageAtApplication?: number
 }
 
@@ -189,12 +210,15 @@ export interface LoanApplication {
 export interface ApplicationDocument {
   id: string
   applicationId: string
-  type: 'pay-stub' | 'w2' | 'tax-return' | 'bank-statement' | 'id' | 'insurance' | 'purchase-agreement' | 'gift-letter' | 'other'
+  type: 'pay-stub' | 'w2' | 'tax-return' | 'bank-statement' | 'id' | 'insurance' |
+        'purchase-agreement' | 'gift-letter' | 'mortgage-statement' | '401k-statement' |
+        'homeowners-insurance' | 'other'
   name: string
   status: DocumentStatus
   uploadedAt?: string
   verifiedAt?: string
   extractedData?: Record<string, unknown>
+  confidence?: number
   url?: string
   year?: string
   monthsCovered?: number
@@ -263,4 +287,94 @@ export interface Notification {
   isRead: boolean
   applicationId?: string
   borrowerId?: string
+}
+
+// ─── Underwriting / Rules Engine Types ───────────────────────────────────────
+
+export type ConfidenceTier = 'auto' | 'confirm' | 'review'
+
+export interface ExtractedField {
+  fieldName: string
+  value: unknown
+  confidence: number   // 0–1
+  tier: ConfidenceTier // > 0.92 auto, 0.75–0.92 confirm, < 0.75 review
+  source: string       // document id that produced this value
+}
+
+export interface DocumentExtraction {
+  documentId: string
+  documentType: ApplicationDocument['type']
+  overallConfidence: number
+  fields: ExtractedField[]
+  rawText?: string
+}
+
+export interface IncomeLineItem {
+  label: string
+  type: 'base-salary' | 'base-hourly' | 'overtime' | 'bonus' | 'commission' |
+        'piece-rate' | 'shift-differential' | 'pto' | 'holiday' | 'reimbursement' | 'other'
+  amount: number
+  frequency: 'weekly' | 'bi-weekly' | 'semi-monthly' | 'monthly' | 'annual'
+  monthlyEquivalent: number
+  isQualifying: boolean // false for reimbursements, mileage, etc.
+  requiresHistory?: boolean // true for OT, bonus, commission
+}
+
+export interface QualifyingIncome {
+  applicationId: string
+  borrowerId: string
+  baseMonthly: number
+  variableMonthly: number // averaged over 24mo if history available
+  totalQualifying: number
+  lineItems: IncomeLineItem[]
+  needsTaxReturns: boolean // true if commission >= 25% of total
+  notes: string[]
+  confidence: number
+}
+
+export interface AssetSummary {
+  liquid: number           // checking + savings + money market at 100%
+  retirement: number       // 401k + IRA at 60%
+  totalUsable: number      // liquid + retirement for qual purposes
+  reserveEligible: number  // funds that count as reserves (excl gift)
+  giftFunds: number        // gift funds — cannot be reserves
+  largeDeposits: { date: string; amount: number; flagged: boolean }[]
+}
+
+export interface DTIResult {
+  frontEndRatio: number  // PITI / gross income
+  backEndRatio: number   // all debts / gross income
+  monthlyIncome: number
+  monthlyHousing: number
+  monthlyAllDebts: number
+  byProgram: Record<string, { front: number; back: number; withinLimit: boolean }>
+}
+
+export interface ProgramEligibility {
+  program: LoanProduct
+  eligible: boolean
+  likelyEligible: boolean
+  reasons: string[]     // why eligible or not
+  redFlags: string[]    // issues that may block approval
+  requiredDocs: string[]
+  estimatedRate?: number
+  estimatedMonthlyPayment?: number
+  requiredDownPayment?: number
+  maxLoanAmount?: number
+  dtiFrontLimit: number
+  dtiBackLimit: number
+  minFICO: number
+}
+
+export interface Escalation {
+  id: string
+  applicationId: string
+  reason: string
+  fieldName?: string
+  confidence?: number
+  createdAt: string
+  resolvedAt?: string
+  resolvedBy?: string
+  resolution?: string
+  status: 'open' | 'resolved' | 'overridden'
 }

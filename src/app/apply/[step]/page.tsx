@@ -8,10 +8,14 @@ import { LoanGoalStep } from '@/components/application/steps/loan-goal'
 import { PersonalInfoStep } from '@/components/application/steps/personal-info'
 import { CoBorrowerStep } from '@/components/application/steps/co-borrower'
 import { EmploymentStep } from '@/components/application/steps/employment'
+import { OtherIncomeStep } from '@/components/application/steps/other-income'
 import { AssetsStep } from '@/components/application/steps/assets'
 import { LiabilitiesStep } from '@/components/application/steps/liabilities'
+import { RealEstateStep } from '@/components/application/steps/real-estate'
 import { PropertyStep } from '@/components/application/steps/property'
+import { DownPaymentStep } from '@/components/application/steps/down-payment'
 import { DeclarationsStep } from '@/components/application/steps/declarations'
+import { DemographicsStep } from '@/components/application/steps/demographics'
 import { ReviewStep } from '@/components/application/steps/review'
 import { GenericStep } from '@/components/application/steps/generic'
 import { orderedStepIds } from '@/lib/mock-data'
@@ -22,13 +26,14 @@ const stepComponents: Record<string, React.ComponentType> = {
   'personal-info': PersonalInfoStep,
   'co-borrower': CoBorrowerStep,
   'employment': EmploymentStep,
-  'other-income': () => <GenericStep stepId="other-income" title="Other Income" description="Do you have any income beyond your primary job?" />,
+  'other-income': OtherIncomeStep,
   'assets': AssetsStep,
   'liabilities': LiabilitiesStep,
-  'real-estate': () => <GenericStep stepId="real-estate" title="Real Estate Owned" description="Do you currently own any properties?" />,
+  'real-estate': RealEstateStep,
   'property': PropertyStep,
-  'down-payment': () => <GenericStep stepId="down-payment" title="Down Payment & Funds to Close" description="Tell us about the funds you plan to use." />,
+  'down-payment': DownPaymentStep,
   'declarations': DeclarationsStep,
+  'demographics': DemographicsStep,
   'review': ReviewStep,
 }
 

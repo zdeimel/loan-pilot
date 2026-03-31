@@ -11,12 +11,14 @@ import type { Liability } from '@/lib/types'
 
 const debtTypes: { value: Liability['type']; label: string; icon: React.ElementType }[] = [
   { value: 'mortgage', label: 'Mortgage', icon: Home },
+  { value: 'heloc', label: 'HELOC', icon: Home },
   { value: 'auto-loan', label: 'Auto Loan', icon: Car },
   { value: 'student-loan', label: 'Student Loan', icon: GraduationCap },
   { value: 'credit-card', label: 'Credit Card', icon: CreditCard },
   { value: 'personal-loan', label: 'Personal Loan', icon: CreditCard },
-  { value: 'heloc', label: 'HELOC', icon: Home },
   { value: 'child-support', label: 'Child Support', icon: CreditCard },
+  { value: 'alimony', label: 'Alimony', icon: CreditCard },
+  { value: 'medical', label: 'Medical Debt', icon: CreditCard },
   { value: 'other', label: 'Other', icon: CreditCard },
 ]
 
@@ -29,8 +31,11 @@ function LiabilityCard({
   onChange: (data: Partial<Liability>) => void
   onRemove: () => void
 }) {
-  const typeDef = debtTypes.find((t) => t.value === liability.type) ?? debtTypes[3]
+  const typeDef = debtTypes.find(t => t.value === liability.type) ?? debtTypes[4]
   const Icon = typeDef.icon
+
+  // Student loan note: if $0 payment, lender will use 0.5-1% of balance
+  const showStudentLoanNote = liability.type === 'student-loan' && (liability.monthlyPayment ?? 0) === 0 && (liability.unpaidBalance ?? 0) > 0
 
   return (
     <div className="border border-border rounded-2xl p-5 space-y-4 bg-white">
@@ -46,9 +51,9 @@ function LiabilityCard({
         </button>
       </div>
 
-      {/* Type Selector */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {debtTypes.map((dt) => (
+      {/* Type selector */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {debtTypes.map(dt => (
           <label
             key={dt.value}
             className={cn(
@@ -58,12 +63,7 @@ function LiabilityCard({
                 : 'border-border text-slate-500 hover:border-slate-300'
             )}
           >
-            <input
-              type="radio"
-              className="sr-only"
-              checked={liability.type === dt.value}
-              onChange={() => onChange({ ...liability, type: dt.value })}
-            />
+            <input type="radio" className="sr-only" checked={liability.type === dt.value} onChange={() => onChange({ ...liability, type: dt.value })} />
             {dt.label}
           </label>
         ))}
@@ -72,65 +72,67 @@ function LiabilityCard({
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Creditor / lender name</label>
+          <Input value={liability.creditor ?? ''} onChange={e => onChange({ ...liability, creditor: e.target.value })} placeholder="Chase, Toyota Financial..." />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Account # (last 4) <span className="text-slate-400 font-normal">(optional)</span></label>
           <Input
-            value={liability.creditor ?? ''}
-            onChange={(e) => onChange({ ...liability, creditor: e.target.value })}
-            placeholder="Chase, Toyota Financial..."
+            value={liability.accountLastFour ?? ''}
+            onChange={e => onChange({ ...liability, accountLastFour: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+            placeholder="3391"
+            maxLength={4}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Monthly payment</label>
-          <Input
-            type="number"
-            value={liability.monthlyPayment ?? ''}
-            onChange={(e) => onChange({ ...liability, monthlyPayment: Number(e.target.value) })}
-            placeholder="350"
-            prefix="$"
-          />
+          <Input type="number" value={liability.monthlyPayment ?? ''} onChange={e => onChange({ ...liability, monthlyPayment: Number(e.target.value) })} placeholder="350" prefix="$" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Unpaid balance</label>
-          <Input
-            type="number"
-            value={liability.unpaidBalance ?? ''}
-            onChange={(e) => onChange({ ...liability, unpaidBalance: Number(e.target.value) })}
-            placeholder="15,000"
-            prefix="$"
-          />
+          <Input type="number" value={liability.unpaidBalance ?? ''} onChange={e => onChange({ ...liability, unpaidBalance: Number(e.target.value) })} placeholder="15,000" prefix="$" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Months remaining <span className="text-slate-400 font-normal">(optional)</span></label>
+          <Input type="number" value={liability.monthsRemaining ?? ''} onChange={e => onChange({ ...liability, monthsRemaining: Number(e.target.value) })} placeholder="48" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Will you pay this off?</label>
           <div className="flex gap-2">
-            {[
-              { value: true, label: 'Yes' },
-              { value: false, label: 'No' },
-            ].map((opt) => (
+            {[{ value: true, label: 'Yes' }, { value: false, label: 'No' }].map(opt => (
               <label
                 key={String(opt.value)}
                 className={cn(
-                  'flex-1 text-center py-2 rounded-xl border-2 cursor-pointer text-sm transition-all',
-                  liability.willPayOff === opt.value
-                    ? 'border-pilot-600 bg-pilot-50 text-pilot-700 font-medium'
-                    : 'border-border text-slate-500'
+                  'flex-1 text-center py-2.5 rounded-xl border-2 cursor-pointer text-sm transition-all',
+                  liability.willPayOff === opt.value ? 'border-pilot-600 bg-pilot-50 text-pilot-700 font-medium' : 'border-border text-slate-500'
                 )}
               >
-                <input
-                  type="radio"
-                  className="sr-only"
-                  checked={liability.willPayOff === opt.value}
-                  onChange={() => onChange({ ...liability, willPayOff: opt.value })}
-                />
+                <input type="radio" className="sr-only" checked={liability.willPayOff === opt.value} onChange={() => onChange({ ...liability, willPayOff: opt.value })} />
                 {opt.label}
               </label>
             ))}
           </div>
-          {liability.willPayOff && (
-            <p className="text-xs text-emerald-600 mt-1">
-              Great — this improves your DTI ratio significantly.
-            </p>
-          )}
+          {liability.willPayOff && <p className="text-xs text-emerald-600 mt-1">This will improve your DTI ratio.</p>}
         </div>
       </div>
+
+      {/* Student loan $0 payment note */}
+      {showStudentLoanNote && (
+        <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+          <p className="text-xs text-amber-700">
+            <strong>Note:</strong> If your student loan payment is $0 (income-driven plan), lenders will use 0.5%–1% of your balance
+            ({formatCurrency((liability.unpaidBalance ?? 0) * 0.005)}–{formatCurrency((liability.unpaidBalance ?? 0) * 0.01)}/mo) depending on loan program.
+          </p>
+        </div>
+      )}
+
+      {/* Child support / alimony note */}
+      {(liability.type === 'child-support' || liability.type === 'alimony') && (
+        <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+          <p className="text-xs text-blue-700">
+            Court-ordered {liability.type === 'child-support' ? 'child support' : 'alimony'} is always included in DTI calculations. You'll need to provide the court order.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -139,18 +141,14 @@ export function LiabilitiesStep() {
   const router = useRouter()
   const { currentApplication, updateApplication, isSaving } = useApplicationStore()
   const [liabilities, setLiabilities] = useState<Partial<Liability>[]>(
-    currentApplication.liabilities?.length
-      ? currentApplication.liabilities
-      : []
+    currentApplication.liabilities?.length ? currentApplication.liabilities : []
   )
   const [hasDebts, setHasDebts] = useState<boolean | undefined>(
     currentApplication.liabilities?.length ? true : undefined
   )
 
   const updateLiability = (index: number, data: Partial<Liability>) => {
-    const updated = [...liabilities]
-    updated[index] = data
-    setLiabilities(updated)
+    const updated = [...liabilities]; updated[index] = data; setLiabilities(updated)
   }
 
   const handleNext = () => {
@@ -159,7 +157,6 @@ export function LiabilitiesStep() {
   }
 
   const totalMonthly = liabilities.reduce((sum, l) => sum + (l.willPayOff ? 0 : (l.monthlyPayment ?? 0)), 0)
-
   const grossMonthly = (currentApplication.employment ?? []).reduce((sum, e) => sum + (e.monthlyIncome ?? 0), 0)
   const dti = grossMonthly > 0 ? Math.round((totalMonthly / grossMonthly) * 1000) / 10 : null
 
@@ -170,26 +167,18 @@ export function LiabilitiesStep() {
       onNext={handleNext}
       isNextDisabled={hasDebts === undefined}
       isSaving={isSaving}
-      whyWeAsk="Lenders calculate your debt-to-income (DTI) ratio by comparing your monthly debt payments to your gross monthly income. Most conventional loans require a DTI under 43%."
+      whyWeAsk="Lenders calculate your debt-to-income (DTI) ratio by comparing monthly debt payments to gross monthly income. Most conventional loans require DTI under 43%; FHA allows up to 50% with compensating factors."
     >
       <div className="space-y-4">
-        {/* Yes/No */}
         {hasDebts === undefined && (
           <div className="bg-white rounded-2xl border border-border shadow-card p-6">
-            <h3 className="font-semibold text-slate-900 mb-5">Do you have any monthly debt obligations?</h3>
-            <p className="text-sm text-slate-500 mb-5">
-              This includes car loans, student loans, credit cards, personal loans, child support, and any other monthly payments.
-            </p>
+            <h3 className="font-semibold text-slate-900 mb-2">Do you have any monthly debt obligations?</h3>
+            <p className="text-sm text-slate-500 mb-5">Car loans, student loans, credit cards, child support, alimony, personal loans, medical debt.</p>
             <div className="grid sm:grid-cols-2 gap-3">
-              {[{ value: true, label: 'Yes, I have debts', emoji: '📋' }, { value: false, label: 'No outstanding debts', emoji: '✨' }].map((opt) => (
+              {[{ value: true, label: 'Yes, I have debts', emoji: '📋' }, { value: false, label: 'No outstanding debts', emoji: '✨' }].map(opt => (
                 <button
                   key={String(opt.value)}
-                  onClick={() => {
-                    setHasDebts(opt.value)
-                    if (opt.value && !liabilities.length) {
-                      setLiabilities([{ id: `lib-${Date.now()}`, type: 'credit-card' }])
-                    }
-                  }}
+                  onClick={() => { setHasDebts(opt.value); if (opt.value && !liabilities.length) setLiabilities([{ id: `lib-${Date.now()}`, type: 'credit-card' }]) }}
                   className="p-5 rounded-xl border-2 border-border hover:border-pilot-300 text-left transition-all"
                 >
                   <div className="text-2xl mb-2">{opt.emoji}</div>
@@ -206,10 +195,8 @@ export function LiabilitiesStep() {
               <span className="text-2xl">✨</span>
             </div>
             <h3 className="font-semibold text-slate-900 mb-2">Great news!</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              No monthly debt obligations means an excellent debt-to-income ratio. This is a strong qualification factor.
-            </p>
-            <button onClick={() => { setHasDebts(true); setLiabilities([{ id: `lib-${Date.now()}`, type: 'credit-card' }]) }} className="text-sm text-slate-400 hover:text-slate-600">
+            <p className="text-sm text-slate-500 mb-4">No monthly debt obligations means an excellent DTI ratio — a strong qualification factor.</p>
+            <button onClick={() => { setHasDebts(true); setLiabilities([{ id: `lib-${Date.now()}`, type: 'credit-card' }]) }} className="text-sm text-slate-400 hover:text-slate-600 underline">
               Wait — I do have some debts
             </button>
           </div>
@@ -217,27 +204,20 @@ export function LiabilitiesStep() {
 
         {hasDebts === true && (
           <>
-            {/* DTI Preview */}
+            {/* DTI preview */}
             {dti !== null && totalMonthly > 0 && (
               <div className="bg-white rounded-2xl border border-border shadow-card p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-slate-700">Debt-to-Income Ratio (DTI)</span>
-                  <span className={`text-lg font-bold ${dti < 36 ? 'text-emerald-600' : dti < 43 ? 'text-amber-500' : 'text-red-500'}`}>
-                    {dti}%
-                  </span>
+                  <span className="text-sm font-medium text-slate-700">Current back-end DTI (debts only, pre-mortgage)</span>
+                  <span className={`text-lg font-bold ${dti < 20 ? 'text-emerald-600' : dti < 36 ? 'text-blue-600' : dti < 43 ? 'text-amber-500' : 'text-red-500'}`}>{dti}%</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-500 ${dti < 36 ? 'bg-emerald-500' : dti < 43 ? 'bg-amber-400' : 'bg-red-500'}`}
-                    style={{ width: `${Math.min(dti, 60)}%` }}
-                  />
+                  <div className={`h-2 rounded-full transition-all duration-500 ${dti < 36 ? 'bg-emerald-500' : dti < 43 ? 'bg-amber-400' : 'bg-red-500'}`} style={{ width: `${Math.min(dti, 60)}%` }} />
                 </div>
                 <div className="flex justify-between text-xs text-slate-400">
-                  <span>0%</span>
-                  <span className="text-emerald-600">Excellent &lt;36%</span>
-                  <span className="text-amber-500">Max 43%</span>
-                  <span>60%+</span>
+                  <span>0%</span><span className="text-emerald-600">Excellent &lt;36%</span><span className="text-amber-500">Max 43%</span><span>60%+</span>
                 </div>
+                <p className="text-xs text-slate-400 mt-2">Your proposed mortgage payment will be added on top of this</p>
               </div>
             )}
 
@@ -245,7 +225,7 @@ export function LiabilitiesStep() {
               <LiabilityCard
                 key={liability.id ?? i}
                 liability={liability}
-                onChange={(data) => updateLiability(i, data)}
+                onChange={data => updateLiability(i, data)}
                 onRemove={() => setLiabilities(liabilities.filter((_, idx) => idx !== i))}
               />
             ))}

@@ -23,10 +23,23 @@ export const metadata: Metadata = {
   },
 }
 
+// Only wrap with ClerkProvider when keys are configured.
+// Without keys the app runs in open/demo mode.
+async function AuthProvider({ children }: { children: React.ReactNode }) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  if (publishableKey) {
+    const { ClerkProvider } = await import('@clerk/nextjs')
+    return <ClerkProvider>{children}</ClerkProvider>
+  }
+  return <>{children}</>
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-slate-50">{children}</body>
+      <body className="min-h-screen bg-slate-50">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }

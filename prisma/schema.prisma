@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users (synced from Clerk) ────────────────────────────────────────────────
+model User {
+  id             String   @id @default(cuid())
+  clerkId        String   @unique
+  email          String   @unique
+  firstName      String?
+  lastName       String?
+  role           UserRole @default(BORROWER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  borrowerApplications LoanApplication[] @relation("BorrowerApplications")
+  loApplications       LoanApplication[] @relation("LOApplications")
+  loanOfficerProfile   LoanOfficerProfile?
+  auditLogs            AuditLog[]
+  sentEmails           EmailLog[]
+}
+
+enum UserRole {
+  BORROWER
+  LOAN_OFFICER
+  PROCESSOR
+  UNDERWRITER
+  ADMIN
+}
+
+// ─── Loan Officer Profile ─────────────────────────────────────────────────────
+model LoanOfficerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  nmls            String?
+  title           String?
+  company         String?
+  branch          String?
+  phone           String?
+  licenseStates   String[]
+  avatarUrl       String?
+
+  brandColor      String?  @default("#2563eb")
+  brandLogo       String?
+  brandWelcome    String?
+  customDomain    String?
+
+  defaultLockDays Int      @default(30)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ─── Loan Applications ────────────────────────────────────────────────────────
+model LoanApplication {
+  id               String            @id @default(cuid())
+  borrowerId       String
+  borrower         User              @relation("BorrowerApplications", fields: [borrowerId], references: [id])
+  loanOfficerId    String?
+  loanOfficer      User?             @relation("LOApplications", fields: [loanOfficerId], references: [id])
+
+  status           ApplicationStatus @default(STARTED)
+  currentStep      String            @default("document-upload")
+  completionPct    Int               @default(0)
+
+  loanDetails      Json              @default("{}")
+  borrowerInfo     Json              @default("{}")
+  coBorrowerInfo   Json?
+  hasCoBorrower    Boolean           @default(false)
+  employment       Json              @default("[]")
+  prevEmployment   Json              @default("[]")
+  otherIncome      Json              @default("[]")
+  assets           Json              @default("[]")
+  liabilities      Json              @default("[]")
+  realEstate       Json              @default("[]")
+  subjectProperty  Json              @default("{}")
+  declarations     Json?
+  demographics     Json?
+
+  creditReport     Json?
+  ausFindings      Json?
+  creditPulledAt   DateTime?
+
+  rateLockExpiry   DateTime?
+  lockedRate       Float?
+  lockedProgram    String?
+
+  resumeToken      String?           @unique
+  resumeTokenExp   DateTime?
+
+  submittedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  documents        ApplicationDocument[]
+  conditions       Condition[]
+  milestones       Milestone[]
+  emailLogs        EmailLog[]
+  auditLogs        AuditLog[]
+
+  @@index([borrowerId])
+  @@index([loanOfficerId])
+  @@index([status])
+}
+
+enum ApplicationStatus {
+  STARTED
+  IN_PROGRESS
+  SUBMITTED
+  PROCESSING
+  CONDITIONALLY_APPROVED
+  CLEAR_TO_CLOSE
+  CLOSED
+  DENIED
+  WITHDRAWN
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+model ApplicationDocument {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id])
+
+  type          String
+  name          String
+  blobUrl       String?
+  status        DocumentStatus @default(PENDING)
+  confidence    Float?
+
+  extractedData Json?
+  year          String?
+  monthsCovered Int?
+
+  documentDate  DateTime?
+  expiresAt     DateTime?
+
+  uploadedAt    DateTime?
+  verifiedAt    DateTime?
+  requestedAt   DateTime?
+  requestNote   String?
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([applicationId])
+}
+
+enum DocumentStatus {
+  REQUESTED
+  PENDING
+  UPLOADED
+  PROCESSING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+// ─── Conditions ───────────────────────────────────────────────────────────────
+model Condition {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id])
+
+  title         String
+  description   String
+  category      ConditionCategory
+  priorTo       ConditionPriorTo
+  status        ConditionStatus @default(OPEN)
+  source        String          @default("underwriter")
+
+  dueDate       DateTime?
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  resolution    String?
+  documentTypes String[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([applicationId])
+}
+
+enum ConditionCategory {
+  INCOME
+  ASSET
+  CREDIT
+  PROPERTY
+  TITLE
+  INSURANCE
+  LEGAL
+  COMPLIANCE
+  OTHER
+}
+
+enum ConditionPriorTo {
+  SUBMISSION
+  APPROVAL
+  DOCS
+  FUNDING
+  POST_CLOSING
+}
+
+enum ConditionStatus {
+  OPEN
+  RECEIVED
+  CLEARED
+  WAIVED
+}
+
+// ─── Milestones ───────────────────────────────────────────────────────────────
+model Milestone {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id])
+
+  name          String
+  status        MilestoneStatus @default(PENDING)
+  completedAt   DateTime?
+  dueDate       DateTime?
+  notes         String?
+
+  createdAt     DateTime        @default(now())
+
+  @@index([applicationId])
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+// ─── Email Logs ───────────────────────────────────────────────────────────────
+model EmailLog {
+  id            String          @id @default(cuid())
+  applicationId String?
+  application   LoanApplication? @relation(fields: [applicationId], references: [id])
+  sentById      String
+  sentBy        User            @relation(fields: [sentById], references: [id])
+
+  toEmail       String
+  subject       String
+  type          EmailType
+  status        String          @default("sent")
+  resendId      String?
+
+  createdAt     DateTime        @default(now())
+
+  @@index([applicationId])
+}
+
+enum EmailType {
+  MAGIC_LINK
+  CO_BORROWER_INVITE
+  STATUS_UPDATE
+  DOCUMENT_REQUEST
+  PRE_APPROVAL_LETTER
+  LOAN_ESTIMATE
+  RATE_LOCK_EXPIRY
+  CONDITION_CLEARED
+  WELCOME
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+model AuditLog {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  applicationId String?
+  application   LoanApplication? @relation(fields: [applicationId], references: [id])
+
+  action        String
+  entityType    String
+  entityId      String
+  metadata      Json?
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime        @default(now())
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([action])
+}

@@ -1,100 +1,219 @@
 'use client'
 
-import { Navbar } from '@/components/shared/navbar'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { mockLoanOfficer } from '@/lib/mock-data'
+import { cn } from '@/lib/utils'
+import { Shield, Lock, Key, Clock, Globe } from 'lucide-react'
+
+const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY']
 
 export default function SettingsPage() {
   const lo = mockLoanOfficer
 
+  // Profile
+  const [name, setName] = useState(lo.name)
+  const [nmls, setNmls] = useState(lo.nmls)
+  const [email, setEmail] = useState(lo.email)
+  const [phone, setPhone] = useState(lo.phone)
+  const [company, setCompany] = useState(lo.company)
+  const [branch, setBranch] = useState(lo.branch ?? '')
+
+  // Branding / white-label
+  const [brandColor, setBrandColor] = useState('#2563eb')
+  const [brandLogo, setBrandLogo] = useState('')
+  const [welcome, setWelcome] = useState("Hi! I'm your dedicated loan officer. I'm here to make your mortgage experience as smooth as possible.")
+  const [customDomain, setCustomDomain] = useState('')
+  const [licensedStates, setLicensedStates] = useState<string[]>(['NC', 'SC', 'VA'])
+
+  // Rate lock
+  const [defaultLockDays, setDefaultLockDays] = useState('30')
+
+  // Notifications
+  const [notifs, setNotifs] = useState({
+    newApp: true,
+    docUploaded: true,
+    statusChange: true,
+    rateLockExpiry: true,
+    conditionCleared: false,
+    aiDigest: true,
+  })
+
+  const toggleState = (s: string) => setLicensedStates(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+  const toggleNotif = (key: keyof typeof notifs) => setNotifs(prev => ({ ...prev, [key]: !prev[key] }))
+
+  const previewColors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#d97706', '#0f172a', '#0891b2', '#db2777']
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-8">Settings</h1>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
 
-        <div className="space-y-6">
-          {/* Profile */}
-          <Card>
-            <CardHeader><CardTitle>Loan Officer Profile</CardTitle></CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-                  <Input defaultValue={lo.name} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">NMLS #</label>
-                  <Input defaultValue={lo.nmls} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                  <Input defaultValue={lo.email} type="email" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
-                  <Input defaultValue={lo.phone} type="tel" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Company</label>
-                  <Input defaultValue={lo.company} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Branch</label>
-                  <Input defaultValue={lo.branch} />
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button>Save Changes</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notifications */}
-          <Card>
-            <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
-            <CardContent className="pt-0 space-y-3">
-              {[
-                { label: 'New application submitted', desc: 'When a borrower submits their application' },
-                { label: 'Document uploaded', desc: 'When a borrower uploads a new document' },
-                { label: 'Application reminder', desc: '48-hour reminder for stalled applications' },
-                { label: 'AI summary digest', desc: 'Daily AI-generated pipeline summary' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{item.label}</p>
-                    <p className="text-xs text-slate-400">{item.desc}</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pilot-600" />
-                  </label>
-                </div>
+      {/* Profile */}
+      <Card>
+        <CardHeader><CardTitle>Loan Officer Profile</CardTitle></CardHeader>
+        <CardContent className="pt-0 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">NMLS #</label><Input value={nmls} onChange={e => setNmls(e.target.value)} /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label><Input value={email} onChange={e => setEmail(e.target.value)} type="email" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label><Input value={phone} onChange={e => setPhone(e.target.value)} type="tel" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Company</label><Input value={company} onChange={e => setCompany(e.target.value)} /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Branch</label><Input value={branch} onChange={e => setBranch(e.target.value)} /></div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Licensed states ({licensedStates.length})</label>
+            <div className="grid grid-cols-8 sm:grid-cols-13 gap-1">
+              {US_STATES.map(s => (
+                <button key={s} type="button" onClick={() => toggleState(s)}
+                  className={cn('py-1 rounded text-xs font-medium border transition-all', licensedStates.includes(s) ? 'border-pilot-600 bg-pilot-50 text-pilot-700' : 'border-border text-slate-400 hover:border-slate-300')}>
+                  {s}
+                </button>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2"><Button>Save Profile</Button></div>
+        </CardContent>
+      </Card>
 
-          {/* Branding */}
-          <Card>
-            <CardHeader><CardTitle>Borrower Portal Branding</CardTitle></CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Custom welcome message</label>
-                <textarea
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pilot-600/20 focus:border-pilot-600 resize-none"
-                  rows={3}
-                  defaultValue="Hi! I'm David Chen, your dedicated loan officer. I'm here to make your mortgage experience as smooth as possible. Feel free to message me any time."
-                />
+      {/* White-label branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Globe className="w-4 h-4" /> Borrower Portal Branding</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Brand color</label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)} className="w-10 h-10 rounded-xl border-2 border-border cursor-pointer" />
+              <div className="flex gap-1.5">
+                {previewColors.map(c => (
+                  <button key={c} type="button" onClick={() => setBrandColor(c)}
+                    className={cn('w-7 h-7 rounded-full border-2 transition-all', brandColor === c ? 'border-slate-400 scale-110' : 'border-transparent')}
+                    style={{ backgroundColor: c }} />
+                ))}
               </div>
-              <div className="flex justify-end">
-                <Button variant="outline">Preview Portal</Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Welcome message</label>
+            <textarea value={welcome} onChange={e => setWelcome(e.target.value)} rows={3} className="input-base w-full pt-2.5 resize-none" />
+            <p className="text-xs text-slate-400 mt-1">Shown to borrowers when they start their application.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Custom domain <span className="text-slate-400 font-normal">(optional)</span></label>
+            <Input value={customDomain} onChange={e => setCustomDomain(e.target.value)} placeholder="apply.yourmortgage.com" />
+            <p className="text-xs text-slate-400 mt-1">Point a CNAME record to loanpilot.com. Contact support to activate.</p>
+          </div>
+
+          {/* Preview */}
+          <div>
+            <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Portal preview</p>
+            <div className="border-2 border-dashed border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: brandColor }}>LP</div>
+                <span className="font-semibold text-slate-900 text-sm">{name}</span>
+                <span className="text-slate-300">·</span>
+                <span className="text-sm text-slate-500">{company}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <p className="text-sm text-slate-600">{welcome}</p>
+              <div className="mt-3 px-4 py-2.5 rounded-xl text-white text-sm font-semibold inline-block" style={{ backgroundColor: brandColor }}>
+                Start My Application
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end"><Button>Save Branding</Button></div>
+        </CardContent>
+      </Card>
+
+      {/* Rate lock settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Lock className="w-4 h-4" /> Rate Lock Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Default rate lock period</label>
+            <div className="flex gap-2">
+              {['15', '30', '45', '60', '90'].map(d => (
+                <button key={d} type="button" onClick={() => setDefaultLockDays(d)}
+                  className={cn('flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all',
+                    defaultLockDays === d ? 'border-pilot-600 bg-pilot-50 text-pilot-700' : 'border-border text-slate-500 hover:border-slate-300')}>
+                  {d} days
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">Expiry alerts</span>
+            </div>
+            <p className="text-xs text-amber-700">You'll receive email and dashboard notifications when a rate lock has 72 hours or less remaining. Rate lock expiry notifications are always on.</p>
+          </div>
+          <div className="flex justify-end"><Button>Save Rate Lock Settings</Button></div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card>
+        <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
+        <CardContent className="pt-0">
+          <div className="divide-y divide-border">
+            {([
+              { key: 'newApp', label: 'New application started', desc: 'When a borrower begins an application' },
+              { key: 'docUploaded', label: 'Document uploaded', desc: 'When a borrower uploads a file' },
+              { key: 'statusChange', label: 'Application status change', desc: 'When a file moves to a new milestone' },
+              { key: 'rateLockExpiry', label: 'Rate lock expiring', desc: '72 hours before a rate lock expires' },
+              { key: 'conditionCleared', label: 'Condition cleared', desc: 'When a condition is marked cleared by borrower' },
+              { key: 'aiDigest', label: 'AI pipeline digest', desc: 'Daily AI summary of your pipeline activity' },
+            ] as { key: keyof typeof notifs; label: string; desc: string }[]).map(n => (
+              <div key={n.key} className="flex items-center justify-between py-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{n.label}</p>
+                  <p className="text-xs text-slate-400">{n.desc}</p>
+                </div>
+                <button type="button" onClick={() => toggleNotif(n.key)}
+                  className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', notifs[n.key] ? 'bg-pilot-600' : 'bg-slate-200')}>
+                  <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white transition-transform', notifs[n.key] ? 'translate-x-6' : 'translate-x-1')} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end pt-4"><Button>Save Notifications</Button></div>
+        </CardContent>
+      </Card>
+
+      {/* Security */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Shield className="w-4 h-4" /> Security</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-3">
+          {[
+            { icon: Key, label: 'Two-factor authentication', desc: 'Add an extra layer of security to your account', action: 'Enable 2FA' },
+            { icon: Shield, label: 'PII access log', desc: 'View a log of all SSN and sensitive field access', action: 'View Log' },
+            { icon: Clock, label: 'Session timeout', desc: 'Automatically sign out after 8 hours of inactivity', action: 'Configure' },
+          ].map(item => (
+            <div key={item.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <item.icon className="w-4 h-4 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{item.label}</p>
+                  <p className="text-xs text-slate-400">{item.desc}</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm">{item.action}</Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   )
 }

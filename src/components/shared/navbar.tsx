@@ -29,7 +29,9 @@ export function Navbar({ variant = 'default' }: { variant?: 'default' | 'transpa
               {[
                 { href: '/dashboard', label: 'Overview', exact: true },
                 { href: '/dashboard/borrowers', label: 'Borrowers' },
+                { href: '/dashboard/conditions', label: 'Conditions' },
                 { href: '/dashboard/documents', label: 'Documents' },
+                { href: '/dashboard/analytics', label: 'Analytics' },
                 { href: '/dashboard/scenarios', label: 'Scenarios' },
                 { href: '/dashboard/messages', label: 'Messages' },
               ].map((link) => {
@@ -103,8 +105,14 @@ export function Navbar({ variant = 'default' }: { variant?: 'default' | 'transpa
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          <Link href="/calculator" className="hidden md:block">
+            <Button variant="ghost" size="sm" className="text-slate-500">Calculator</Button>
+          </Link>
           <Link href="/dashboard" className="hidden md:block">
             <Button variant="ghost" size="sm" className="text-slate-500">Loan Officers</Button>
+          </Link>
+          <Link href="/sign-in" className="hidden md:block">
+            <Button variant="ghost" size="sm" className="text-slate-600">Sign In</Button>
           </Link>
           <Link href="/apply">
             <Button size="sm" className="hidden sm:flex gap-1.5">

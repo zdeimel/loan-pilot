@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Shield, HelpCircle } from 'lucide-react'
 import { StepLayout } from '@/components/application/step-layout'
+import { Input } from '@/components/ui/input'
 import { useApplicationStore } from '@/lib/store/applicationStore'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,21 @@ const declarationQuestions = [
     question: 'Are you a co-signer or guarantor on any debt not listed in this application?',
     help: 'Even if you don\'t make payments, co-signed debts may count against your DTI ratio.',
   },
+  {
+    id: 'isUSCitizen',
+    question: 'Are you a U.S. citizen or permanent resident alien?',
+    help: 'Non-permanent resident aliens may still qualify for conventional loans. VA loans require U.S. citizenship.',
+  },
+  {
+    id: 'isPrimaryResidence',
+    question: 'Do you intend to occupy this property as your primary residence?',
+    help: 'Primary residences typically get the best rates and lowest down payment requirements. Investment properties require higher down payments.',
+  },
+  {
+    id: 'hasOwnershipInterest',
+    question: 'Have you had an ownership interest in a property in the last 3 years?',
+    help: 'This affects first-time homebuyer program eligibility. Owning any type of property counts — a condo, vacation home, investment property, etc.',
+  },
 ]
 
 type DeclarationAnswers = Record<string, boolean | undefined>
@@ -58,12 +74,20 @@ export function DeclarationsStep() {
   const [answers, setAnswers] = useState<DeclarationAnswers>(
     (currentApplication.declarations as DeclarationAnswers) ?? {}
   )
+  const [ownershipType, setOwnershipType] = useState<string>(currentApplication.declarations?.ownershipType ?? '')
+  const [titledHow, setTitledHow] = useState<string>(currentApplication.declarations?.titledHow ?? '')
 
   const allAnswered = declarationQuestions.every((q) => answers[q.id] !== undefined)
 
   const handleNext = () => {
-    updateApplication({ declarations: answers })
-    router.push('/apply/review')
+    updateApplication({
+      declarations: {
+        ...answers,
+        ownershipType: answers.hasOwnershipInterest ? (ownershipType as 'primary-residence' | 'second-home' | 'investment-property' | undefined) : undefined,
+        titledHow: titledHow || undefined,
+      },
+    })
+    router.push('/apply/demographics')
   }
 
   const yesCount = Object.values(answers).filter(Boolean).length
@@ -75,7 +99,7 @@ export function DeclarationsStep() {
       onNext={handleNext}
       isNextDisabled={!allAnswered}
       isSaving={isSaving}
-      nextLabel="Continue to Review"
+      nextLabel="Continue"
       helpText="These yes/no questions are required by federal law (URLA/Fannie Mae). Answer honestly — a 'yes' doesn't automatically disqualify you, and we can often work through it together."
     >
       <div className="space-y-5">
@@ -137,6 +161,47 @@ export function DeclarationsStep() {
             </div>
           ))}
         </div>
+
+        {/* Ownership type follow-up */}
+        {answers.hasOwnershipInterest === true && (
+          <div className="bg-white rounded-2xl border border-border shadow-card p-5 space-y-3 animate-slide-up">
+            <h3 className="font-semibold text-slate-900">Ownership details</h3>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">What type of property did you own?</label>
+              <select
+                value={ownershipType}
+                onChange={e => setOwnershipType(e.target.value)}
+                className="input-base h-10"
+              >
+                <option value="">Select...</option>
+                <option value="primary-residence">Primary Residence</option>
+                <option value="second-home">Second Home / Vacation</option>
+                <option value="investment-property">Investment Property</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">How was/is the title held? <span className="text-slate-400 font-normal">(optional)</span></label>
+              <Input
+                value={titledHow}
+                onChange={e => setTitledHow(e.target.value)}
+                placeholder="e.g. Sole ownership, Joint tenancy, Tenants in common"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Titled how (if no prior ownership) */}
+        {answers.hasOwnershipInterest === false && (
+          <div className="bg-white rounded-2xl border border-border shadow-card p-5 animate-slide-up">
+            <h3 className="font-semibold text-slate-900 mb-3">How will title be held?</h3>
+            <Input
+              value={titledHow}
+              onChange={e => setTitledHow(e.target.value)}
+              placeholder="e.g. Sole ownership, Joint tenancy with right of survivorship"
+            />
+            <p className="text-xs text-slate-400 mt-1.5">Your attorney or title company will advise on the best form of ownership for your situation.</p>
+          </div>
+        )}
 
         {/* Summary */}
         {allAnswered && (
