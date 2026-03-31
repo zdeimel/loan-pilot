@@ -448,7 +448,7 @@ export const mockApplications: LoanApplication[] = [
       { id: 'doc-052', applicationId: 'app-005', type: 'tax-return', name: '1040 - 2022', status: 'verified', uploadedAt: '2024-04-25T09:10:00Z', verifiedAt: '2024-04-27T11:30:00Z' },
       { id: 'doc-053', applicationId: 'app-005', type: 'business-return', name: '1120-S - 2023', status: 'verified', uploadedAt: '2024-04-25T09:15:00Z', verifiedAt: '2024-04-28T10:00:00Z' },
       { id: 'doc-054', applicationId: 'app-005', type: 'bank-statement', name: 'First Citizens - Apr 2024', status: 'verified', uploadedAt: '2024-05-02T08:00:00Z', verifiedAt: '2024-05-03T09:00:00Z' },
-      { id: 'doc-055', applicationId: 'app-005', type: 'purchase-agreement', name: 'Executed Purchase Agreement', status: 'received', uploadedAt: '2024-06-10T16:00:00Z' },
+      { id: 'doc-055', applicationId: 'app-005', type: 'purchase-agreement', name: 'Executed Purchase Agreement', status: 'uploaded', uploadedAt: '2024-06-10T16:00:00Z' },
       { id: 'doc-056', applicationId: 'app-005', type: 'gift-letter', name: 'Gift Letter - Down Payment Portion', status: 'pending' },
     ],
   },
@@ -914,7 +914,7 @@ export const mockApplications: LoanApplication[] = [
       { id: 'doc-103', applicationId: 'app-010', type: 'business-return', name: 'Sched C 2022', status: 'verified', uploadedAt: '2024-05-12T09:15:00Z', verifiedAt: '2024-05-15T11:30:00Z' },
       { id: 'doc-104', applicationId: 'app-010', type: 'bank-statement', name: 'Mountain BizBank - Apr 2024', status: 'verified', uploadedAt: '2024-05-20T10:00:00Z', verifiedAt: '2024-05-21T09:00:00Z' },
       { id: 'doc-105', applicationId: 'app-010', type: 'bank-statement', name: 'Mountain BizBank - May 2024', status: 'processing', uploadedAt: '2024-06-05T09:00:00Z' },
-      { id: 'doc-106', applicationId: 'app-010', type: 'profit-loss', name: 'P&L Statement YTD 2024', status: 'received', uploadedAt: '2024-06-10T14:00:00Z' },
+      { id: 'doc-106', applicationId: 'app-010', type: 'profit-loss', name: 'P&L Statement YTD 2024', status: 'uploaded', uploadedAt: '2024-06-10T14:00:00Z' },
     ],
   },
 
@@ -1006,7 +1006,7 @@ export const mockApplications: LoanApplication[] = [
       { id: 'doc-110', applicationId: 'app-011', type: 'pay-stub', name: 'LES - May 2024', status: 'verified', uploadedAt: '2024-04-10T09:00:00Z', verifiedAt: '2024-04-11T10:00:00Z' },
       { id: 'doc-111', applicationId: 'app-011', type: 'coe', name: 'Certificate of Eligibility', status: 'verified', uploadedAt: '2024-04-10T09:05:00Z', verifiedAt: '2024-04-11T10:30:00Z' },
       { id: 'doc-112', applicationId: 'app-011', type: 'bank-statement', name: 'FBFCU - Apr 2024', status: 'verified', uploadedAt: '2024-04-18T08:00:00Z', verifiedAt: '2024-04-19T09:00:00Z' },
-      { id: 'doc-113', applicationId: 'app-011', type: 'payoff-statement', name: 'Payoff Statement - Current VA Loan', status: 'received', uploadedAt: '2024-06-01T10:00:00Z' },
+      { id: 'doc-113', applicationId: 'app-011', type: 'payoff-statement', name: 'Payoff Statement - Current VA Loan', status: 'uploaded', uploadedAt: '2024-06-01T10:00:00Z' },
     ],
   },
 
