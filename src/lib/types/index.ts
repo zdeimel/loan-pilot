@@ -212,7 +212,8 @@ export interface ApplicationDocument {
   applicationId: string
   type: 'pay-stub' | 'w2' | 'tax-return' | 'bank-statement' | 'id' | 'insurance' |
         'purchase-agreement' | 'gift-letter' | 'mortgage-statement' | '401k-statement' |
-        'homeowners-insurance' | 'other'
+        'homeowners-insurance' | 'coe' | 'dd214' | 'business-return' | 'appraisal' |
+        'profit-loss' | 'payoff-statement' | 'other'
   name: string
   status: DocumentStatus
   uploadedAt?: string

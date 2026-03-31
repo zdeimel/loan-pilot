@@ -305,7 +305,7 @@ export const mockApplications: LoanApplication[] = [
     assets: [
       { id: 'ast-040', type: 'checking', institution: 'USAA', accountLastFour: '7713', currentValue: 22400 },
       { id: 'ast-041', type: 'savings', institution: 'USAA', accountLastFour: '7714', currentValue: 18600 },
-      { id: 'ast-042', type: 'retirement-tsp', institution: 'Thrift Savings Plan', currentValue: 88000 },
+      { id: 'ast-042', type: 'retirement-401k', institution: 'Thrift Savings Plan', currentValue: 88000 },
     ],
 
     liabilities: [
@@ -401,7 +401,7 @@ export const mockApplications: LoanApplication[] = [
       { id: 'ast-050', type: 'checking', institution: 'First Citizens Bank', accountLastFour: '2210', currentValue: 185000 },
       { id: 'ast-051', type: 'savings', institution: 'First Citizens Bank', accountLastFour: '2211', currentValue: 420000 },
       { id: 'ast-052', type: 'retirement-401k', institution: 'Fidelity', currentValue: 1100000 },
-      { id: 'ast-053', type: 'brokerage', institution: 'Schwab', currentValue: 680000 },
+      { id: 'ast-053', type: 'stocks', institution: 'Schwab', currentValue: 680000 },
     ],
 
     liabilities: [
@@ -618,7 +618,7 @@ export const mockApplications: LoanApplication[] = [
       { id: 'ast-070', type: 'checking', institution: 'PNC Bank', accountLastFour: '3344', currentValue: 68000 },
       { id: 'ast-071', type: 'savings', institution: 'PNC Bank', accountLastFour: '3345', currentValue: 142000 },
       { id: 'ast-072', type: 'retirement-401k', institution: 'Vanguard', currentValue: 490000 },
-      { id: 'ast-073', type: 'brokerage', institution: 'Schwab', currentValue: 275000 },
+      { id: 'ast-073', type: 'stocks', institution: 'Schwab', currentValue: 275000 },
     ],
 
     liabilities: [
@@ -973,7 +973,7 @@ export const mockApplications: LoanApplication[] = [
 
     assets: [
       { id: 'ast-110', type: 'checking', institution: 'Fort Bragg Federal CU', accountLastFour: '4490', currentValue: 14200 },
-      { id: 'ast-111', type: 'retirement-tsp', institution: 'Thrift Savings Plan', currentValue: 62000 },
+      { id: 'ast-111', type: 'retirement-401k', institution: 'Thrift Savings Plan', currentValue: 62000 },
     ],
 
     liabilities: [
