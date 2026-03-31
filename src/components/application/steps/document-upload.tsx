@@ -11,10 +11,14 @@ import { useApplicationStore, type ExtractedDocumentData } from '@/lib/store/app
 import { cn, formatCurrency } from '@/lib/utils'
 
 // ─── Document slot definitions ────────────────────────────────────────────────
+const currentYear = new Date().getFullYear()
+const taxYear = currentYear - 1   // most recent filed tax year
+const priorTaxYear = taxYear - 1
+
 const DOC_SLOTS = [
   {
-    id: 'w2-2023',
-    label: 'W-2 (2023)',
+    id: `w2-${taxYear}`,
+    label: `W-2 (${taxYear})`,
     description: 'Most recent W-2 from your employer',
     category: 'income',
     required: true,
@@ -22,8 +26,8 @@ const DOC_SLOTS = [
     hint: 'Box 1 shows your total taxable wages',
   },
   {
-    id: 'w2-2022',
-    label: 'W-2 (2022)',
+    id: `w2-${priorTaxYear}`,
+    label: `W-2 (${priorTaxYear})`,
     description: 'Prior year W-2',
     category: 'income',
     required: true,
@@ -40,8 +44,8 @@ const DOC_SLOTS = [
     hint: 'Shows current YTD earnings and deductions',
   },
   {
-    id: 'tax-return-2023',
-    label: '1040 Tax Return (2023)',
+    id: `tax-return-${taxYear}`,
+    label: `1040 Tax Return (${taxYear})`,
     description: 'Full federal tax return with all schedules',
     category: 'tax',
     required: true,
@@ -49,8 +53,8 @@ const DOC_SLOTS = [
     hint: 'We read AGI, filing status, and other income sources',
   },
   {
-    id: 'tax-return-2022',
-    label: '1040 Tax Return (2022)',
+    id: `tax-return-${priorTaxYear}`,
+    label: `1040 Tax Return (${priorTaxYear})`,
     description: 'Prior year full federal return',
     category: 'tax',
     required: false,
