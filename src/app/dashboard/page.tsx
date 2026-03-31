@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   TrendingUp, Users, FileText, AlertCircle, CheckCircle2, Clock,
-  ArrowRight, Sparkles, BarChart3, DollarSign
+  ArrowRight, Sparkles, BarChart3, DollarSign, X
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
@@ -17,14 +18,28 @@ import { formatCurrency, getStatusColor, getStatusLabel, timeAgo } from '@/lib/u
 
 const PIE_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706']
 
+const AI_RESPONSES: Record<string, { title: string; content: string }> = {
+  "Summarize Sarah Mitchell's file": {
+    title: "Sarah Mitchell — File Summary",
+    content: `**Loan:** Conventional 30-yr | $480,000 | Purchase — 1402 Stonehaven Dr, Cary NC\n\n**Strengths:**\n• W-2 income of $110K/yr, 5+ years at Fidelity Investments — excellent stability\n• 20% down ($96K) confirmed — no PMI required\n• Co-borrower James Mitchell not yet fully documented\n\n**Action items (3 open):**\n• Bank statements: only 30 days uploaded — need 60 days\n• 2024 tax return still pending upload\n• Co-borrower income section incomplete\n\n**AI recommendation:** File will likely qualify at Approve/Eligible once co-borrower documentation is complete. Estimated DTI ~28% — within conventional guidelines.`,
+  },
+  "Draft follow-up for Marcus Thompson": {
+    title: "Draft — Marcus Thompson Follow-Up",
+    content: `Subject: Your refinance application is under review\n\nHi Marcus,\n\nI wanted to give you a quick update on your 15-year refinance for 8800 Providence Rd. Your complete file was submitted on June 13th and is now with our processing team.\n\nWhat happens next:\n1. Processor will order your updated appraisal (5–7 business days)\n2. Underwriting review typically takes 2–3 days after appraisal\n3. I'll reach out immediately with any conditions or questions\n\nExpected clear-to-close date: approximately July 5th.\n\nFeel free to reply here or call me at (919) 555-0100 if you have any questions.\n\nBest,\nDavid Chen | Senior Loan Officer | LoanPilot Mortgage`,
+  },
+  "Compare FHA vs Conventional for Priya": {
+    title: "FHA vs. Conventional — Priya Patel",
+    content: `Based on Priya's profile (pre-approval, $0 down, Raleigh NC):\n\n**FHA 30-yr (recommended):**\n• Min. down payment: 3.5% ($7,000 on $200K home)\n• Min. FICO: 580 with 3.5% down\n• MIP: 0.55%/yr upfront + annual — adds ~$85/mo\n• Loan limit in Wake County: $524,225\n• Best fit if credit score is 580–699\n\n**Conventional 30-yr:**\n• Min. down payment: 3% (HomeReady/HomePossible)\n• Min. FICO: 620\n• PMI drops off at 80% LTV — typically 5–7 years\n• No upfront MIP\n• Better long-term if FICO ≥ 680\n\n**Recommendation:** Start with FHA until we have credit score confirmed. If score comes in ≥ 680, re-run conventional — PMI cancellation makes it cheaper long-term.`,
+  },
+}
+
 export default function DashboardPage() {
   const recent = mockApplications.slice(0, 3)
   const unread = mockNotifications.filter((n) => !n.isRead)
+  const [aiModal, setAiModal] = useState<{ title: string; content: string } | null>(null)
 
   return (
     <div className="min-h-screen bg-slate-50">
-      
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Header */}
@@ -106,7 +121,6 @@ export default function DashboardPage() {
 
             {/* Charts Row */}
             <div className="grid sm:grid-cols-2 gap-4">
-              {/* Monthly Applications */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -126,7 +140,6 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Loan Mix */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -170,13 +183,10 @@ export default function DashboardPage() {
                 Generate borrower summaries, draft follow-up emails, or run qualification scenarios instantly.
               </p>
               <div className="space-y-2">
-                {[
-                  'Summarize Sarah Mitchell\'s file',
-                  'Draft follow-up for Marcus Thompson',
-                  'Compare FHA vs Conventional for Priya',
-                ].map((prompt) => (
+                {Object.keys(AI_RESPONSES).map((prompt) => (
                   <button
                     key={prompt}
+                    onClick={() => setAiModal(AI_RESPONSES[prompt])}
                     className="w-full text-left text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-pilot-100"
                   >
                     {prompt}
@@ -191,7 +201,7 @@ export default function DashboardPage() {
                 <CardTitle>Notifications</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-3">
-                {mockNotifications.map((notif) => (
+                {mockNotifications.slice(0, 5).map((notif) => (
                   <div key={notif.id} className={`flex items-start gap-3 p-3 rounded-xl ${notif.isRead ? '' : 'bg-pilot-50/50'}`}>
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
                       notif.type === 'action-required' ? 'bg-amber-100' :
@@ -241,6 +251,46 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Response modal */}
+      {aiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-pilot-100 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-pilot-600" />
+                </div>
+                <h2 className="font-semibold text-slate-900">{aiModal.title}</h2>
+              </div>
+              <button onClick={() => setAiModal(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                {aiModal.content.split('**').map((part, i) =>
+                  i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                )}
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-3 flex-shrink-0">
+              <button
+                onClick={() => { navigator.clipboard?.writeText(aiModal.content); }}
+                className="text-sm text-pilot-600 hover:text-pilot-700 font-medium"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => setAiModal(null)}
+                className="px-4 py-2 rounded-xl bg-pilot-600 hover:bg-pilot-700 text-white text-sm font-medium transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

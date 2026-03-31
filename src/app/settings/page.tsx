@@ -1,19 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Toast } from '@/components/ui/toast'
 import { mockLoanOfficer } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
-import { Shield, Lock, Key, Clock, Globe } from 'lucide-react'
+import { Shield, Lock, Key, Clock, Globe, X } from 'lucide-react'
 
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY']
+
+type SecurityModal = '2fa' | 'pii-log' | 'session' | null
+
+const PII_LOG_ENTRIES = [
+  { field: 'SSN (last 4)', user: 'David Chen', time: '2026-03-31 09:14', reason: 'Credit pull initiated' },
+  { field: 'SSN (last 4)', user: 'David Chen', time: '2026-03-30 14:22', reason: 'AUS submission' },
+  { field: 'DOB', user: 'David Chen', time: '2026-03-29 11:05', reason: 'Identity verification' },
+  { field: 'SSN (last 4)', user: 'System', time: '2026-03-28 08:30', reason: 'Tri-merge credit report' },
+  { field: 'Bank Account #', user: 'David Chen', time: '2026-03-27 16:44', reason: 'Asset verification' },
+]
 
 export default function SettingsPage() {
   const lo = mockLoanOfficer
 
-  // Profile
   const [name, setName] = useState(lo.name)
   const [nmls, setNmls] = useState(lo.nmls)
   const [email, setEmail] = useState(lo.email)
@@ -21,17 +31,13 @@ export default function SettingsPage() {
   const [company, setCompany] = useState(lo.company)
   const [branch, setBranch] = useState(lo.branch ?? '')
 
-  // Branding / white-label
   const [brandColor, setBrandColor] = useState('#2563eb')
-  const [brandLogo, setBrandLogo] = useState('')
   const [welcome, setWelcome] = useState("Hi! I'm your dedicated loan officer. I'm here to make your mortgage experience as smooth as possible.")
   const [customDomain, setCustomDomain] = useState('')
   const [licensedStates, setLicensedStates] = useState<string[]>(['NC', 'SC', 'VA'])
 
-  // Rate lock
   const [defaultLockDays, setDefaultLockDays] = useState('30')
 
-  // Notifications
   const [notifs, setNotifs] = useState({
     newApp: true,
     docUploaded: true,
@@ -40,6 +46,16 @@ export default function SettingsPage() {
     conditionCleared: false,
     aiDigest: true,
   })
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null)
+  const [securityModal, setSecurityModal] = useState<SecurityModal>(null)
+  const [sessionTimeout, setSessionTimeout] = useState('8')
+  const [twoFAStep, setTwoFAStep] = useState<'choose' | 'code'>('choose')
+  const [twoFACode, setTwoFACode] = useState('')
+
+  const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
+    setToast({ message, type })
+  }, [])
 
   const toggleState = (s: string) => setLicensedStates(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
   const toggleNotif = (key: keyof typeof notifs) => setNotifs(prev => ({ ...prev, [key]: !prev[key] }))
@@ -73,7 +89,9 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
-          <div className="flex justify-end pt-2"><Button>Save Profile</Button></div>
+          <div className="flex justify-end pt-2">
+            <Button onClick={() => showToast('Profile saved successfully')}>Save Profile</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -109,7 +127,6 @@ export default function SettingsPage() {
             <p className="text-xs text-slate-400 mt-1">Point a CNAME record to loanpilot.com. Contact support to activate.</p>
           </div>
 
-          {/* Preview */}
           <div>
             <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Portal preview</p>
             <div className="border-2 border-dashed border-border rounded-xl p-4">
@@ -126,7 +143,9 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end"><Button>Save Branding</Button></div>
+          <div className="flex justify-end">
+            <Button onClick={() => showToast('Branding settings saved')}>Save Branding</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -155,7 +174,9 @@ export default function SettingsPage() {
             </div>
             <p className="text-xs text-amber-700">You'll receive email and dashboard notifications when a rate lock has 72 hours or less remaining. Rate lock expiry notifications are always on.</p>
           </div>
-          <div className="flex justify-end"><Button>Save Rate Lock Settings</Button></div>
+          <div className="flex justify-end">
+            <Button onClick={() => showToast(`Default rate lock set to ${defaultLockDays} days`)}>Save Rate Lock Settings</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -184,7 +205,9 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-end pt-4"><Button>Save Notifications</Button></div>
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => showToast('Notification preferences saved')}>Save Notifications</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -195,9 +218,9 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="pt-0 space-y-3">
           {[
-            { icon: Key, label: 'Two-factor authentication', desc: 'Add an extra layer of security to your account', action: 'Enable 2FA' },
-            { icon: Shield, label: 'PII access log', desc: 'View a log of all SSN and sensitive field access', action: 'View Log' },
-            { icon: Clock, label: 'Session timeout', desc: 'Automatically sign out after 8 hours of inactivity', action: 'Configure' },
+            { id: '2fa' as const, icon: Key, label: 'Two-factor authentication', desc: 'Add an extra layer of security to your account', action: 'Enable 2FA' },
+            { id: 'pii-log' as const, icon: Shield, label: 'PII access log', desc: 'View a log of all SSN and sensitive field access', action: 'View Log' },
+            { id: 'session' as const, icon: Clock, label: 'Session timeout', desc: `Automatically sign out after ${sessionTimeout} hours of inactivity`, action: 'Configure' },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
               <div className="flex items-center gap-3">
@@ -209,11 +232,107 @@ export default function SettingsPage() {
                   <p className="text-xs text-slate-400">{item.desc}</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">{item.action}</Button>
+              <Button variant="outline" size="sm" onClick={() => { setTwoFAStep('choose'); setTwoFACode(''); setSecurityModal(item.id) }}>{item.action}</Button>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {/* Security modals */}
+      {securityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-slate-900">
+                {securityModal === '2fa' && 'Enable Two-Factor Authentication'}
+                {securityModal === 'pii-log' && 'PII Access Log'}
+                {securityModal === 'session' && 'Configure Session Timeout'}
+              </h2>
+              <button onClick={() => setSecurityModal(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {securityModal === '2fa' && (
+              <div className="space-y-4">
+                {twoFAStep === 'choose' ? (
+                  <>
+                    <p className="text-sm text-slate-600">Choose your authentication method:</p>
+                    <div className="space-y-2">
+                      {['Authenticator app (Google/Authy)', 'SMS text message'].map(opt => (
+                        <button key={opt} onClick={() => setTwoFAStep('code')}
+                          className="w-full text-left px-4 py-3 rounded-xl border-2 border-border hover:border-pilot-400 hover:bg-pilot-50 transition-all text-sm font-medium text-slate-700">
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-600">Enter the 6-digit code from your authenticator app to verify setup:</p>
+                    <div className="bg-slate-50 rounded-xl p-4 font-mono text-center text-2xl tracking-widest text-slate-700 border">
+                      ████ ████ ████ ████
+                    </div>
+                    <p className="text-xs text-slate-400 text-center">Scan the QR code above with your authenticator app</p>
+                    <input
+                      value={twoFACode}
+                      onChange={e => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      className="w-full px-4 py-2.5 text-center text-xl font-mono tracking-widest rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-pilot-600/20 focus:border-pilot-600"
+                      maxLength={6}
+                    />
+                    <Button className="w-full" disabled={twoFACode.length !== 6}
+                      onClick={() => { setSecurityModal(null); showToast('Two-factor authentication enabled') }}>
+                      Verify & Enable
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {securityModal === 'pii-log' && (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-400">Last 5 PII field access events</p>
+                <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
+                  {PII_LOG_ENTRIES.map((entry, i) => (
+                    <div key={i} className="px-4 py-3 bg-white">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-800">{entry.field}</span>
+                        <span className="text-xs text-slate-400">{entry.time}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">{entry.user} · {entry.reason}</p>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" className="w-full" onClick={() => setSecurityModal(null)}>Close</Button>
+              </div>
+            )}
+
+            {securityModal === 'session' && (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-600">Automatically sign out after a period of inactivity:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {['1', '2', '4', '8', '12', '24'].map(h => (
+                    <button key={h} onClick={() => setSessionTimeout(h)}
+                      className={cn('py-2.5 rounded-xl border-2 text-sm font-medium transition-all',
+                        sessionTimeout === h ? 'border-pilot-600 bg-pilot-50 text-pilot-700' : 'border-border text-slate-500 hover:border-slate-300')}>
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+                <Button className="w-full" onClick={() => {
+                  setSecurityModal(null)
+                  showToast(`Session timeout set to ${sessionTimeout} hours`)
+                }}>
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }

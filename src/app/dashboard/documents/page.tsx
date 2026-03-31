@@ -1,30 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, FileText, CheckCircle2, Clock, AlertCircle, Download, Eye, Search } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, Clock, AlertCircle, Download, Search } from 'lucide-react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Toast } from '@/components/ui/toast'
 import { mockApplications } from '@/lib/mock-data'
 import { getDocStatusColor, timeAgo } from '@/lib/utils'
 import type { DocumentStatus } from '@/lib/types'
 
-const allDocs = mockApplications.flatMap((app) =>
+type DocEntry = {
+  id: string
+  applicationId: string
+  name: string
+  type: string
+  status: string
+  uploadedAt?: string
+  borrowerName: string
+  borrowerId: string
+}
+
+const initialDocs: DocEntry[] = mockApplications.flatMap((app) =>
   app.documents.map((doc) => ({
     ...doc,
     borrowerName: `${app.borrower?.firstName} ${app.borrower?.lastName}`,
     borrowerId: app.id,
   }))
 )
-
-const statusCounts = {
-  all: allDocs.length,
-  verified: allDocs.filter((d) => d.status === 'verified').length,
-  processing: allDocs.filter((d) => d.status === 'processing').length,
-  pending: allDocs.filter((d) => d.status === 'pending').length,
-  rejected: allDocs.filter((d) => d.status === 'rejected').length,
-}
 
 const statusIcon = {
   pending: Clock,
@@ -35,18 +38,36 @@ const statusIcon = {
 }
 
 export default function DocumentsPage() {
+  const [docs, setDocs] = useState<DocEntry[]>(initialDocs)
   const [filter, setFilter] = useState<DocumentStatus | 'all'>('all')
   const [query, setQuery] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
 
-  const filtered = allDocs.filter((d) => {
+  const statusCounts = {
+    all: docs.length,
+    verified: docs.filter((d) => d.status === 'verified').length,
+    processing: docs.filter((d) => d.status === 'processing').length,
+    pending: docs.filter((d) => d.status === 'pending').length,
+    rejected: docs.filter((d) => d.status === 'rejected').length,
+  }
+
+  const filtered = docs.filter((d) => {
     const matchStatus = filter === 'all' || d.status === filter
     const matchQuery = !query || d.name.toLowerCase().includes(query.toLowerCase()) || d.borrowerName.toLowerCase().includes(query.toLowerCase())
     return matchStatus && matchQuery
   })
 
+  const handleVerify = (docId: string) => {
+    setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: 'verified' } : d))
+    setToast('Document marked as verified')
+  }
+
+  const handleDownload = (docName: string) => {
+    setToast(`Downloading ${docName}…`)
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">Document Center</h1>
@@ -91,7 +112,7 @@ export default function DocumentsPage() {
           <CardContent className="pt-0">
             <div className="divide-y divide-border">
               {filtered.map((doc) => {
-                const StatusIcon = statusIcon[doc.status] ?? FileText
+                const StatusIcon = statusIcon[doc.status as keyof typeof statusIcon] ?? FileText
                 return (
                   <div key={doc.id} className="flex items-center gap-4 py-4 hover:bg-slate-50/50 -mx-6 px-6 transition-colors">
                     <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -100,19 +121,22 @@ export default function DocumentsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 truncate">{doc.name}</p>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        {doc.borrowerName} · {doc.type.replace('-', ' ')}
+                        {doc.borrowerName} · {doc.type.replace(/-/g, ' ')}
                         {doc.uploadedAt && ` · ${timeAgo(doc.uploadedAt)}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getDocStatusColor(doc.status)}`}>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getDocStatusColor(doc.status as DocumentStatus)}`}>
                         {doc.status}
                       </span>
-                      {doc.status === 'processing' && (
-                        <Button size="sm" variant="outline">Verify</Button>
+                      {(doc.status === 'processing' || doc.status === 'uploaded') && (
+                        <Button size="sm" variant="outline" onClick={() => handleVerify(doc.id)}>Verify</Button>
                       )}
                       {doc.status === 'verified' && (
-                        <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                        <button
+                          onClick={() => handleDownload(doc.name)}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
                           <Download className="w-4 h-4" />
                         </button>
                       )}
@@ -127,6 +151,8 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   )
 }

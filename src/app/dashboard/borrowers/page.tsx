@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Search, ArrowRight, Plus } from 'lucide-react'
+import { Search, ArrowRight, Plus, X, Send } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Toast } from '@/components/ui/toast'
 import { mockApplications } from '@/lib/mock-data'
 import { formatCurrency, getStatusColor, getStatusLabel, getLoanPurposeLabel, timeAgo } from '@/lib/utils'
 import type { ApplicationStatus } from '@/lib/types'
@@ -24,6 +25,12 @@ const STATUS_FILTERS: { value: ApplicationStatus | 'all'; label: string }[] = [
 export default function BorrowersPage() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>('all')
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteName, setInviteName] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [invitePurpose, setInvitePurpose] = useState('purchase')
+  const [sending, setSending] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   const filtered = mockApplications.filter((app) => {
     const name = `${app.borrower?.firstName} ${app.borrower?.lastName}`.toLowerCase()
@@ -32,10 +39,19 @@ export default function BorrowersPage() {
     return matchesQuery && matchesStatus
   })
 
+  const handleInvite = async () => {
+    if (!inviteEmail || !inviteName) return
+    setSending(true)
+    await new Promise(r => setTimeout(r, 1000))
+    setSending(false)
+    setShowInvite(false)
+    setInviteName('')
+    setInviteEmail('')
+    setToast(`Invitation sent to ${inviteEmail}`)
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
-      
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -43,7 +59,7 @@ export default function BorrowersPage() {
             <h1 className="text-2xl font-bold text-slate-900">Borrowers</h1>
             <p className="text-slate-500 mt-1">{mockApplications.length} applications in pipeline</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setShowInvite(true)}>
             <Plus className="w-4 h-4" />
             Invite Borrower
           </Button>
@@ -77,7 +93,7 @@ export default function BorrowersPage() {
           </div>
         </div>
 
-        {/* Mobile card list (< sm) */}
+        {/* Mobile card list */}
         <div className="sm:hidden space-y-3">
           {filtered.map((app) => (
             <Link key={app.id} href={`/dashboard/borrowers/${app.id}`}>
@@ -112,7 +128,7 @@ export default function BorrowersPage() {
           )}
         </div>
 
-        {/* Desktop table (>= sm) */}
+        {/* Desktop table */}
         <Card className="hidden sm:block">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -192,6 +208,56 @@ export default function BorrowersPage() {
           </div>
         </Card>
       </div>
+
+      {/* Invite Borrower modal */}
+      {showInvite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold text-slate-900">Invite a Borrower</h2>
+              <button onClick={() => setShowInvite(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Full name <span className="text-red-500">*</span></label>
+                <Input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Jane Smith" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Email address <span className="text-red-500">*</span></label>
+                <Input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="jane@email.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Loan purpose</label>
+                <select
+                  value={invitePurpose}
+                  onChange={e => setInvitePurpose(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-pilot-600/20 focus:border-pilot-600 bg-white"
+                >
+                  <option value="purchase">Purchase</option>
+                  <option value="refinance">Refinance</option>
+                  <option value="cash-out">Cash-Out Refi</option>
+                  <option value="pre-approval">Pre-Approval</option>
+                </select>
+              </div>
+              <p className="text-xs text-slate-400">The borrower will receive an email with a secure link to start their application.</p>
+              <div className="flex gap-3 pt-1">
+                <Button variant="outline" className="flex-1" onClick={() => setShowInvite(false)} disabled={sending}>Cancel</Button>
+                <Button className="flex-1 gap-2" onClick={handleInvite} disabled={!inviteEmail || !inviteName || sending}>
+                  {sending ? (
+                    <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Sending...</>
+                  ) : (
+                    <><Send className="w-4 h-4" />Send Invite</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   )
 }
