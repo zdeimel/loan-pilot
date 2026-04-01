@@ -109,7 +109,7 @@ export function DemographicsStep() {
         collectionMethod: 'internet',
       },
     })
-    router.push('/apply/review')
+    router.push('/apply/credit-consent')
   }
 
   const isValid = ethnicity.length > 0 && race.length > 0 && sex !== ''
@@ -121,7 +121,7 @@ export function DemographicsStep() {
       onNext={handleNext}
       isNextDisabled={!isValid}
       isSaving={isSaving}
-      nextLabel="Continue to Review"
+      nextLabel="Continue"
       whyWeAsk="Federal law (HMDA) requires lenders to collect this information to ensure fair lending practices. You may choose not to provide it — your loan decision is never based on these characteristics."
     >
       <div className="space-y-5">

@@ -1161,6 +1161,7 @@ export const applicationSteps: ApplicationStep[] = [
   { id: 'down-payment', label: 'Down Payment', description: 'Funds to close', isComplete: false, isActive: false },
   { id: 'declarations', label: 'Declarations', description: 'A few yes/no questions', isComplete: false, isActive: false },
   { id: 'demographics', label: 'Demographics', description: 'HMDA required information', isComplete: false, isActive: false },
+  { id: 'credit-consent', label: 'Credit Check', description: 'Authorize a soft credit pull', isComplete: false, isActive: false },
   { id: 'review', label: 'Review', description: 'Confirm and submit', isComplete: false, isActive: false, isLocked: true },
 ]
 

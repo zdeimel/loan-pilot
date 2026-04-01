@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { LoanApplication } from '@/lib/types'
+import type { LoanApplication, CreditPullStatus, ISoftPullResult, CreditConsentMetadata } from '@/lib/types'
 import { mockApplications, orderedStepIds } from '@/lib/mock-data'
 
 // ─── Extracted Document Data ──────────────────────────────────────────────────
@@ -74,6 +74,12 @@ interface ApplicationState {
   resetApplication: () => void
   setExtractedData: (data: ExtractedDocumentData) => void
   applyExtractedData: (data: ExtractedDocumentData) => void
+
+  // Credit pull
+  acceptCreditConsent: () => void
+  setCreditPullStatus: (status: CreditPullStatus) => void
+  setCreditPullResult: (result: ISoftPullResult) => void
+  setCreditPullError: (error: string) => void
 
   // LO pipeline
   applications: LoanApplication[]
@@ -230,6 +236,52 @@ export const useApplicationStore = create<ApplicationState>()(
         set((state) => ({
           currentApplication: { ...state.currentApplication, ...merged },
           extractedData: data,
+        }))
+      },
+
+      acceptCreditConsent: () => {
+        const consent: CreditConsentMetadata = {
+          accepted: true,
+          acceptedAt: new Date().toISOString(),
+        }
+        set((state) => ({
+          currentApplication: {
+            ...state.currentApplication,
+            creditConsent: consent,
+            creditPullStatus: 'ready',
+          },
+        }))
+      },
+
+      setCreditPullStatus: (status) => {
+        set((state) => ({
+          currentApplication: {
+            ...state.currentApplication,
+            creditPullStatus: status,
+            ...(status === 'pulling' ? { creditPullRequestedAt: new Date().toISOString() } : {}),
+          },
+        }))
+      },
+
+      setCreditPullResult: (result) => {
+        set((state) => ({
+          currentApplication: {
+            ...state.currentApplication,
+            creditPullStatus: 'success',
+            creditPullResult: result,
+            creditPullCompletedAt: new Date().toISOString(),
+            creditPullError: null,
+          },
+        }))
+      },
+
+      setCreditPullError: (error) => {
+        set((state) => ({
+          currentApplication: {
+            ...state.currentApplication,
+            creditPullStatus: 'error',
+            creditPullError: error,
+          },
         }))
       },
 

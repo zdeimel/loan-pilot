@@ -16,6 +16,7 @@ import { PropertyStep } from '@/components/application/steps/property'
 import { DownPaymentStep } from '@/components/application/steps/down-payment'
 import { DeclarationsStep } from '@/components/application/steps/declarations'
 import { DemographicsStep } from '@/components/application/steps/demographics'
+import { CreditConsentStep } from '@/components/application/steps/credit-consent'
 import { ReviewStep } from '@/components/application/steps/review'
 import { GenericStep } from '@/components/application/steps/generic'
 import { orderedStepIds } from '@/lib/mock-data'
@@ -34,6 +35,7 @@ const stepComponents: Record<string, React.ComponentType> = {
   'down-payment': DownPaymentStep,
   'declarations': DeclarationsStep,
   'demographics': DemographicsStep,
+  'credit-consent': CreditConsentStep,
   'review': ReviewStep,
 }
 

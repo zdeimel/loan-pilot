@@ -172,6 +172,44 @@ export interface Demographics {
   ageAtApplication?: number
 }
 
+// ─── iSoftPull / Credit Pull Types ───────────────────────────────────────────
+
+export type CreditPullStatus = 'idle' | 'ready' | 'pulling' | 'success' | 'error'
+
+/** Normalized result for a single credit bureau from iSoftPull */
+export interface ISoftPullBureauResult {
+  bureau: string
+  status: 'success' | 'error' | 'no-hit' | 'freeze'
+  /** Temporary PDF link returned by iSoftPull on success (expires quickly) */
+  link?: string
+  message?: string
+  failureType?: 'error' | 'no-hit' | 'freeze'
+}
+
+/** Intelligence / decisioning summary returned by iSoftPull */
+export interface ISoftPullIntelligence {
+  result?: string
+  name?: string
+}
+
+/** Normalized aggregate result stored in application state after a pull */
+export interface ISoftPullResult {
+  requestedAt: string
+  completedAt: string
+  bureaus: ISoftPullBureauResult[]
+  intelligence?: ISoftPullIntelligence
+  /** Representative credit score when available from full-feed parse */
+  creditScore?: number
+  /** Raw full-feed data preserved for future deeper parsing */
+  fullFeedSummary?: Record<string, unknown>
+}
+
+/** Consent record — written at the moment the borrower authorizes */
+export interface CreditConsentMetadata {
+  accepted: boolean
+  acceptedAt: string
+}
+
 // ─── Full Application ─────────────────────────────────────────────────────────
 export interface LoanApplication {
   id: string
@@ -200,6 +238,14 @@ export interface LoanApplication {
 
   documents: ApplicationDocument[]
   notes?: string
+
+  // Credit pull
+  creditConsent?: CreditConsentMetadata
+  creditPullStatus?: CreditPullStatus
+  creditPullRequestedAt?: string
+  creditPullCompletedAt?: string
+  creditPullError?: string | null
+  creditPullResult?: ISoftPullResult | null
 
   // Loan Officer metadata
   loanOfficerId?: string
