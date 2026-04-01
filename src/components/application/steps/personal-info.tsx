@@ -140,7 +140,8 @@ export function PersonalInfoStep() {
   const mailingAddressSame = watch('mailingAddressSame')
   const showPriorAddress = Number(yearsAtAddress) < 2
 
-  const onSubmit = (data: FormData) => {
+  const saveAndContinue = () => {
+    const data = watch()
     const priorAddresses = showPriorAddress && data.priorStreet ? [{
       address: { street: data.priorStreet, city: data.priorCity ?? '', state: data.priorState ?? '', zip: data.priorZip ?? '' },
       fromDate: data.priorFromDate ?? '',
@@ -189,11 +190,11 @@ export function PersonalInfoStep() {
     <StepLayout
       stepId="personal-info"
       completedSteps={['loan-goal']}
-      onNext={handleSubmit(onSubmit)}
+      onNext={saveAndContinue}
       isSaving={isSaving}
       whyWeAsk="Lenders use your personal information to verify your identity, pull your credit report, and confirm your eligibility for a loan. This is standard for all mortgage applications."
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => { e.preventDefault(); saveAndContinue() }} className="space-y-6">
 
         {/* Name */}
         <div className="bg-white rounded-2xl border border-border shadow-card p-6">
