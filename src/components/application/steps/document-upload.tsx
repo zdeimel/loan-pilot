@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Upload, FileText, CheckCircle2, AlertCircle, Sparkles,
-  Edit2, ChevronRight, X, RotateCcw, Info,
+  Edit2, ChevronRight, X, RotateCcw, Info, Camera,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApplicationStore, type ExtractedDocumentData } from '@/lib/store/applicationStore'
@@ -267,6 +267,7 @@ function DocSlot({
   onRemove: (slotId: string) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
   const handleDrop = useCallback(
@@ -302,6 +303,18 @@ function DocSlot({
         ref={inputRef}
         type="file"
         accept=".pdf,.jpg,.jpeg,.png,.heic"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onFileSelect(slot.id, file)
+        }}
+      />
+      {/* Camera input — triggers native camera on mobile */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="sr-only"
         onChange={(e) => {
           const file = e.target.files?.[0]
@@ -374,14 +387,24 @@ function DocSlot({
           )}
         </div>
 
-        {/* Upload button */}
+        {/* Upload / Camera buttons */}
         {!isDone && !isProcessing && (
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
-          >
-            Upload
-          </button>
+          <div className="flex flex-col gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+            >
+              <Upload className="w-3 h-3" />
+              Upload
+            </button>
+            <button
+              onClick={() => cameraRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+            >
+              <Camera className="w-3 h-3" />
+              Camera
+            </button>
+          </div>
         )}
       </div>
 
