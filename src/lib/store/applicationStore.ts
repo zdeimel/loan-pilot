@@ -292,7 +292,7 @@ export const useApplicationStore = create<ApplicationState>()(
       },
     }),
     {
-      name: 'loanpilot-application',
+      name: 'loanpilot-application-v2',
       partialize: (state) => ({
         currentApplication: state.currentApplication,
         currentStepId: state.currentStepId,
