@@ -514,7 +514,11 @@ export function DocumentUploadStep() {
     }
 
     setScanProgress(100)
-    const complete: ExtractedDocumentData = { ...merged, confidence: merged.confidence ?? {} }
+    const complete: ExtractedDocumentData = {
+      ...merged,
+      uploadedDocTypes: merged.uploadedDocTypes ?? uploadedSlotIds,
+      confidence: merged.confidence ?? {},
+    }
     setExtracted(complete)
     setEdited(complete)
     setPhase('review')
