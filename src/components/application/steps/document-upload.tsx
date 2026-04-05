@@ -502,9 +502,9 @@ export function DocumentUploadStep() {
     )
 
     // Merge all extracted fields — later docs win for duplicate keys
-    const merged: ExtractedDocumentData = results.reduce(
+    const merged = results.reduce(
       (acc, r) => ({ ...acc, ...r }),
-      { uploadedDocTypes: uploadedSlotIds } as ExtractedDocumentData
+      { uploadedDocTypes: uploadedSlotIds, confidence: {} } as ExtractedDocumentData
     )
 
     // Finish progress animation
