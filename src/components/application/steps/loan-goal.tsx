@@ -51,7 +51,7 @@ export function LoanGoalStep() {
   const handleNext = () => {
     if (!selected) return
     updateApplication({ loanDetails: { ...currentApplication.loanDetails, purpose: selected } })
-    router.push('/apply/personal-info')
+    router.push('/apply/state-income')
   }
 
   return (

@@ -109,7 +109,7 @@ export function DemographicsStep() {
         collectionMethod: 'internet',
       },
     })
-    router.push('/apply/credit-consent')
+    router.push('/apply/review')
   }
 
   const isValid = ethnicity.length > 0 && race.length > 0 && sex !== ''

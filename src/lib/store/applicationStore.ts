@@ -90,7 +90,7 @@ const emptyApplication: Partial<LoanApplication> = {
   id: `app-new-${Date.now()}`,
   status: 'started',
   completionPercent: 0,
-  currentStep: 'document-upload',
+  currentStep: 'loan-goal',
   loanDetails: {},
   borrower: {},
   hasCoBorrower: false,
@@ -292,7 +292,7 @@ export const useApplicationStore = create<ApplicationState>()(
       },
     }),
     {
-      name: 'loanpilot-application-v4',
+      name: 'loanpilot-application-v5',
       partialize: (state) => ({
         currentApplication: state.currentApplication,
         currentStepId: state.currentStepId,

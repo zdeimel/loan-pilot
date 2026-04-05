@@ -36,6 +36,7 @@ export interface BorrowerPersonalInfo {
   mailingAddressSame?: boolean
   mailingAddress?: Address
   citizenshipStatus?: 'us-citizen' | 'permanent-resident' | 'non-permanent-resident'
+  annualIncome?: number
 }
 
 export interface Address {
@@ -130,6 +131,7 @@ export interface SubjectProperty {
 // ─── Loan Details ─────────────────────────────────────────────────────────────
 export interface LoanDetails {
   purpose: LoanPurpose
+  propertyState?: string
   loanAmount?: number
   downPaymentAmount?: number
   downPaymentPercent?: number
@@ -247,9 +249,30 @@ export interface LoanApplication {
   creditPullError?: string | null
   creditPullResult?: ISoftPullResult | null
 
+  // Early-flow fields
+  liquidCash?: number
+  disclosuresAccepted?: {
+    documentUpload: boolean
+    aiReading: boolean
+    softCreditPull: boolean
+    acceptedAt: string
+  }
+
+  // Red flags (computed after credit pull)
+  redFlags?: RedFlag[]
+
   // Loan Officer metadata
   loanOfficerId?: string
   assignedAt?: string
+}
+
+// ─── Red Flags ────────────────────────────────────────────────────────────────
+export interface RedFlag {
+  id: string
+  severity: 'warning' | 'critical'
+  label: string
+  explanation: string      // borrower-facing plain English
+  internalNote: string     // loan officer dashboard only
 }
 
 // ─── Documents ───────────────────────────────────────────────────────────────
