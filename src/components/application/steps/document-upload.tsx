@@ -427,6 +427,9 @@ export function DocumentUploadStep() {
     Object.fromEntries(DOC_SLOTS.map((s) => [s.id, { status: 'idle', progress: 0 }]))
   )
 
+  // Store actual File objects for Azure DI extraction
+  const filesRef = useRef<Record<string, File>>({})
+
   // Phase: upload → processing → review → done
   const [phase, setPhase] = useState<'upload' | 'processing' | 'review' | 'applied'>('upload')
   const [scanMsg, setScanMsg] = useState(SCAN_MESSAGES[0])
@@ -441,39 +444,78 @@ export function DocumentUploadStep() {
   const requiredDone = requiredSlots.filter((id) => slotStates[id]?.status === 'done')
   const canAnalyze = doneSlots.length >= 2
 
-  // Simulate file upload + scan
+  // Store file and animate upload
   const handleFileSelect = useCallback(async (slotId: string, file: File) => {
-    // Upload phase
+    filesRef.current[slotId] = file
+
+    // Upload animation
     setSlotStates((prev) => ({ ...prev, [slotId]: { status: 'uploading', progress: 0, fileName: file.name } }))
     for (let p = 10; p <= 100; p += 15) {
       await new Promise((r) => setTimeout(r, 80))
       setSlotStates((prev) => ({ ...prev, [slotId]: { ...prev[slotId], progress: p } }))
     }
-    // Scan phase
     setSlotStates((prev) => ({ ...prev, [slotId]: { status: 'scanning', progress: 100, fileName: file.name } }))
-    await new Promise((r) => setTimeout(r, 1200))
-    // Done
+    await new Promise((r) => setTimeout(r, 800))
     setSlotStates((prev) => ({ ...prev, [slotId]: { status: 'done', progress: 100, fileName: file.name } }))
   }, [])
 
   const handleRemove = useCallback((slotId: string) => {
+    delete filesRef.current[slotId]
     setSlotStates((prev) => ({ ...prev, [slotId]: { status: 'idle', progress: 0 } }))
   }, [])
 
-  // Run AI extraction simulation across all uploaded docs
+  // Send each uploaded file to Azure DI and merge results
   const runExtraction = async () => {
     setPhase('processing')
     setScanProgress(0)
 
-    for (let i = 0; i < SCAN_MESSAGES.length; i++) {
-      setScanMsg(SCAN_MESSAGES[i])
-      setScanProgress(Math.round(((i + 1) / SCAN_MESSAGES.length) * 100))
-      await new Promise((r) => setTimeout(r, 420))
+    const uploadedSlotIds = Object.keys(filesRef.current)
+    const msgInterval = Math.max(1, Math.floor(SCAN_MESSAGES.length / Math.max(uploadedSlotIds.length, 1)))
+    let msgIdx = 0
+
+    const advanceMsg = () => {
+      setScanMsg(SCAN_MESSAGES[msgIdx % SCAN_MESSAGES.length])
+      setScanProgress(Math.round(((msgIdx + 1) / SCAN_MESSAGES.length) * 100))
+      msgIdx++
     }
 
-    const result = generateMockExtraction(doneSlots)
-    setExtracted(result)
-    setEdited(result)
+    advanceMsg()
+
+    // Call /api/extract for each uploaded file in parallel
+    const results = await Promise.all(
+      uploadedSlotIds.map(async (slotId) => {
+        const file = filesRef.current[slotId]
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('slotId', slotId)
+
+        advanceMsg()
+
+        try {
+          const res = await fetch('/api/extract', { method: 'POST', body: fd })
+          const json = await res.json()
+          return json.extracted as Partial<ExtractedDocumentData>
+        } catch {
+          return {}
+        }
+      })
+    )
+
+    // Merge all extracted fields — later docs win for duplicate keys
+    const merged: ExtractedDocumentData = results.reduce(
+      (acc, r) => ({ ...acc, ...r }),
+      { uploadedDocTypes: uploadedSlotIds } as ExtractedDocumentData
+    )
+
+    // Finish progress animation
+    for (let i = msgIdx; i < SCAN_MESSAGES.length; i++) {
+      advanceMsg()
+      await new Promise((r) => setTimeout(r, 200))
+    }
+
+    setScanProgress(100)
+    setExtracted(merged)
+    setEdited(merged)
     setPhase('review')
   }
 
